@@ -46,12 +46,21 @@ const schema = {
           format: "Invalid Email",
         },
       },
+      status:{
+        type:"string",
+        enum:["active","inactive"],
+        default:"active",
+        errorMessage:{
+          enum:"Status should be either active or inactive"
+        }
+      }
     },
-    required: ["name", "email"],
+    required: ["name", "email","status"],
     errorMessage: {
       required: {
         name: "Name is required",
         email: "Email is required",
+        status:"Status is required"
       },
     },
   },
