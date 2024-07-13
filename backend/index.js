@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import ajvErrors from "ajv-errors";
 
+//fastify instance
 const fastify = Fastify({
   logger: {
     transport: {
@@ -24,12 +25,27 @@ fastify.get("/", async (request, reply) => {
   return { hello: "world" };
 });
 
+//schema
 const schema = {
   body: {
     type: "object",
     properties: {
-      name: { type: "string" },
-      email: { type: "string" },
+      name: {
+        type: "string",
+        minLength: 1,
+        errorMessage: {
+          minLength: "Name is required",
+        },
+      },
+      email: {
+        type: "string",
+        format: "email",
+        minLength: 1,
+        errorMessage: {
+          minLength: "Email is required",
+          format: "Invalid Email",
+        },
+      },
     },
     required: ["name", "email"],
     errorMessage: {
@@ -41,15 +57,25 @@ const schema = {
   },
 };
 
+//post endpoint
 fastify.post(
   "/create",
   { schema, attachValidation: true },
   async (request, reply) => {
     if (request.validationError) {
-      //fastify.log.info(request.validationError)
-      const errorMessages = request.validationError.validation.map((err) => {
-        return err.message;
-      });
+      //fastify.log.info(request.validationError);
+      const uniquePaths = new Set();
+      const errorMessages = request.validationError.validation.reduce(
+        (acc, err) => {
+          const path = err.instancePath.slice(1);
+          if (!uniquePaths.has(path)) {
+            uniquePaths.add(path);
+            acc.push({ name: path, message: err.message });
+          }
+          return acc;
+        },
+        []
+      );
       return reply
         .code(400)
         .send({ type: "Validation Error", errors: errorMessages });
